@@ -1,4 +1,4 @@
-# rag_logic.py
+# rag_logic.py 수정
 
 import os
 from langchain_community.document_loaders import PyPDFLoader
@@ -21,20 +21,24 @@ def initialize_rag_chain(openai_api_key, pdf_path):
     docs = loader.load()
     print("✅ [1/5] 문서 로드 완료")
     
-    # 2. 문서 분할
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    # 2. 문서 분할 개선
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,  # 더 작은 청크로 분할
+        chunk_overlap=50,
+        separators=["\n\n", "\n", ".", "!", "?", ",", " ", ""]
+    )
     splits = text_splitter.split_documents(docs)
-    print("✅ [2/5] 문서 분할 완료")
+    print(f"✅ [2/5] 문서 분할 완료 - 총 {len(splits)}개 청크")
     
     # 3. OpenAI 임베딩 및 벡터 DB 설정
     embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
     vectorstore = FAISS.from_documents(documents=splits, embedding=embeddings)
     print("✅ [3/5] FAISS 벡터 DB 생성 완료")
     
-    # 4. 검색기 생성
+    # 4. 검색기 생성 개선
     retriever = vectorstore.as_retriever(
         search_type="similarity",
-        search_kwargs={"k": 5}  # 기본값 4에서 5로 증가
+        search_kwargs={"k": 5}  # 검색 결과 증가
     )
     print("✅ [4/5] 검색기 생성 완료")
     
@@ -64,16 +68,19 @@ QUESTION: {question}
     )
     
     print("✅ [5/5] RAG 체인 생성 완료")
-    return rag_chain
+    
+    # 검색기를 따로 저장하여 디버깅에 사용
+    return rag_chain, retriever
 
-# rag_logic.py의 get_answer 함수 수정
-def get_answer(chain, question):
-    # 검색 결과 확인용
-    docs = chain.steps[0]["context"].get_relevant_documents(question)
-    print(f"검색된 문서 개수: {len(docs)}")
-    for i, doc in enumerate(docs):
-        print(f"문서 {i+1}: {doc.page_content[:200]}...")
+def get_answer(chain, retriever, question):
+    """RAG 체인과 검색기를 이용하여 답변을 생성합니다."""
+    # 디버깅: 검색 결과 확인
+    try:
+        docs = retriever.get_relevant_documents(question)
+        print(f"검색된 문서 개수: {len(docs)}")
+        for i, doc in enumerate(docs):
+            print(f"문서 {i+1}: {doc.page_content[:200]}...")
+    except Exception as e:
+        print(f"검색 디버깅 중 오류: {e}")
     
     return chain.invoke(question)
-
-
