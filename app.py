@@ -33,10 +33,10 @@ if not uploaded_file:
     st.info("👈 사이드바에서 PDF 파일을 업로드하면 해당 문서를 기반으로 질문에 답변해드립니다.")
     st.stop()
 
-# RAG 체인 초기화 (API 키 또는 파일이 변경되었을 때)
+# RAG 체인 초기화
 file_hash = str(hash(uploaded_file.getvalue()))
-if ("rag_chain" not in st.session_state or 
-    st.session_state.get("api_key") != openai_api_key or 
+if ("rag_chain" not in st.session_state or
+    st.session_state.get("api_key") != openai_api_key or
     st.session_state.get("file_hash") != file_hash):
     
     try:
@@ -46,7 +46,11 @@ if ("rag_chain" not in st.session_state or
                 tmp_file.write(uploaded_file.getvalue())
                 tmp_file_path = tmp_file.name
             
-            # RAG 체인 초기화 (retriever도 함께 반환)
+            # 파일 크기 확인
+            file_size = os.path.getsize(tmp_file_path)
+            st.write(f"파일 크기: {file_size / (1024*1024):.2f} MB")
+            
+            # RAG 체인 초기화
             rag_chain, retriever = initialize_rag_chain(openai_api_key, tmp_file_path)
             st.session_state.rag_chain = rag_chain
             st.session_state.retriever = retriever
@@ -59,8 +63,19 @@ if ("rag_chain" not in st.session_state or
             
         st.success(f"✅ '{uploaded_file.name}' 문서 분석 완료! 이제 질문을 입력하세요.")
         
+    except ValueError as ve:
+        st.error(f"❌ 문서 처리 오류: {str(ve)}")
+        st.info("💡 다음을 확인해주세요:")
+        st.info("• PDF가 텍스트를 포함하고 있는지 확인")
+        st.info("• 파일이 손상되지 않았는지 확인")
+        st.info("• 파일 크기가 너무 크지 않은지 확인")
+        st.stop()
     except Exception as e:
         st.error(f"❌ 초기화 오류: {str(e)}")
+        st.info("💡 가능한 해결 방법:")
+        st.info("• OpenAI API 키가 올바른지 확인")
+        st.info("• 네트워크 연결 상태 확인")
+        st.info("• 다른 PDF 파일로 시도")
         st.stop()
 
 # 현재 분석 중인 문서 표시
@@ -84,13 +99,11 @@ if prompt := st.chat_input("질문을 입력하세요"):
         try:
             with st.spinner("답변 생성 중..."):
                 response = get_answer(
-                    st.session_state.rag_chain, 
-                    st.session_state.retriever, 
+                    st.session_state.rag_chain,
+                    st.session_state.retriever,
                     prompt
                 )
                 st.markdown(response)
             st.session_state.messages.append({"role": "assistant", "content": response})
         except Exception as e:
             st.error(f"❌ 답변 생성 오류: {str(e)}")
-
-
