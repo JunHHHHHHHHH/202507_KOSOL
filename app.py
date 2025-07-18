@@ -6,7 +6,7 @@ import tempfile
 from rag_logic import initialize_rag_chain, get_answer
 
 st.set_page_config(page_title="RAG 챗봇", page_icon="🤖")
-st.title("🤖 PDF 문서 기반 RAG 챗봇")
+st.title("🤖 문서 기반 RAG 챗봇")
 
 # OpenAI API 키 입력
 st.sidebar.title("🔑 API 설정")
@@ -46,8 +46,10 @@ if ("rag_chain" not in st.session_state or
                 tmp_file.write(uploaded_file.getvalue())
                 tmp_file_path = tmp_file.name
             
-            # RAG 체인 초기화
-            st.session_state.rag_chain = initialize_rag_chain(openai_api_key, tmp_file_path)
+            # RAG 체인 초기화 (retriever도 함께 반환)
+            rag_chain, retriever = initialize_rag_chain(openai_api_key, tmp_file_path)
+            st.session_state.rag_chain = rag_chain
+            st.session_state.retriever = retriever
             st.session_state.api_key = openai_api_key
             st.session_state.file_hash = file_hash
             st.session_state.file_name = uploaded_file.name
@@ -81,9 +83,14 @@ if prompt := st.chat_input("질문을 입력하세요"):
     with st.chat_message("assistant"):
         try:
             with st.spinner("답변 생성 중..."):
-                response = get_answer(st.session_state.rag_chain, prompt)
+                response = get_answer(
+                    st.session_state.rag_chain, 
+                    st.session_state.retriever, 
+                    prompt
+                )
                 st.markdown(response)
             st.session_state.messages.append({"role": "assistant", "content": response})
         except Exception as e:
             st.error(f"❌ 답변 생성 오류: {str(e)}")
+
 
