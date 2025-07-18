@@ -59,7 +59,10 @@ def initialize_rag_chain(openai_api_key, pdf_path):
         # 4. 검색기 생성
         retriever = vectorstore.as_retriever(
             search_type="similarity",
-            search_kwargs={"k": 5}
+            search_kwargs={
+                 "k": 3,
+                 "score_threshold": 0.7  # 유사도 임계값 설정
+            }
         )
         print("✅ [4/5] 검색기 생성 완료")
         
