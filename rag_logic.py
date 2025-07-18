@@ -22,7 +22,7 @@ def initialize_rag_chain(openai_api_key, pdf_path):
     print("✅ [1/5] 문서 로드 완료")
     
     # 2. 문서 분할
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     splits = text_splitter.split_documents(docs)
     print("✅ [2/5] 문서 분할 완료")
     
@@ -32,7 +32,10 @@ def initialize_rag_chain(openai_api_key, pdf_path):
     print("✅ [3/5] FAISS 벡터 DB 생성 완료")
     
     # 4. 검색기 생성
-    retriever = vectorstore.as_retriever()
+    retriever = vectorstore.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": 5}  # 기본값 4에서 5로 증가
+    )
     print("✅ [4/5] 검색기 생성 완료")
     
     # 5. OpenAI LLM 설정
@@ -63,6 +66,14 @@ QUESTION: {question}
     print("✅ [5/5] RAG 체인 생성 완료")
     return rag_chain
 
+# rag_logic.py의 get_answer 함수 수정
 def get_answer(chain, question):
+    # 검색 결과 확인용
+    docs = chain.steps[0]["context"].get_relevant_documents(question)
+    print(f"검색된 문서 개수: {len(docs)}")
+    for i, doc in enumerate(docs):
+        print(f"문서 {i+1}: {doc.page_content[:200]}...")
+    
     return chain.invoke(question)
+
 
