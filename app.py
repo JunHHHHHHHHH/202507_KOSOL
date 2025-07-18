@@ -6,7 +6,7 @@ import tempfile
 from rag_logic import initialize_rag_chain, get_answer
 
 st.set_page_config(page_title="RAG Chatbot", page_icon="🤖")
-st.title("🤖 PDF 문서 기반 RAG Chatbot _ KOSOL")
+st.title("🤖 PDF 문서 기반 RAG Chatbot")
 
 # OpenAI API 키 입력
 st.sidebar.title("🔑 API 설정")
