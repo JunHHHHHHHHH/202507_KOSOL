@@ -50,7 +50,9 @@ QUESTION: {question}
     llm = ChatOpenAI(
         model="gpt-3.5-turbo",
         temperature=0,
-        openai_api_key=openai_api_key
+        openai_api_key=openai_api_key,
+        max_tokens=500,  # 비용 최적화
+        timeout=30       # 타임아웃 설정
     )
     
     rag_chain = (
@@ -65,4 +67,3 @@ QUESTION: {question}
 
 def get_answer(chain, question):
     return chain.invoke(question)
-
