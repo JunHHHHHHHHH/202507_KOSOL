@@ -19,11 +19,24 @@ def initialize_rag_chain(openai_api_key, pdf_path):
     # 1. 문서 로드
     loader = PyPDFLoader(pdf_path)
     docs = loader.load()
-    print("✅ [1/5] 문서 로드 완료")
+    print(f"✅ [1/5] 문서 로드 완료 - 총 {len(docs)}페이지")
+
+     # 문서가 비어있는지 확인
+        if not docs:
+            raise ValueError("PDF 문서가 비어있거나 텍스트를 추출할 수 없습니다.")
+        
+    # 문서 내용 길이 확인
+        total_text = ""
+        for doc in docs:
+            total_text += doc.page_content
+        print(f"전체 텍스트 길이: {len(total_text)} 문자")
+        
+        if len(total_text.strip()) < 100:
+            raise ValueError("문서 내용이 너무 짧습니다. 스캔된 이미지 PDF일 가능성이 있습니다.")
     
-    # 2. 문서 분할 개선
+    # 2. 문서 분할
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,  # 더 작은 청크로 분할
+        chunk_size=500,  # 청크 사이즈 조정
         chunk_overlap=50,
         separators=["\n\n", "\n", ".", "!", "?", ",", " ", ""]
     )
@@ -68,7 +81,6 @@ QUESTION: {question}
     )
     
     print("✅ [5/5] RAG 체인 생성 완료")
-    
     # 검색기를 따로 저장하여 디버깅에 사용
     return rag_chain, retriever
 
