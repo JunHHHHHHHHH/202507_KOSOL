@@ -1,4 +1,5 @@
 # rag_logic.py
+
 import os
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -8,18 +9,15 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema.output_parser import StrOutputParser
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PDF_PATH = os.path.join(BASE_DIR, "주간농사정보 제28호.pdf")
-
-def initialize_rag_chain(openai_api_key):
-    """OpenAI API 키를 받아 RAG 체인을 초기화합니다."""
+def initialize_rag_chain(openai_api_key, pdf_path):
+    """OpenAI API 키와 PDF 파일 경로를 받아 RAG 체인을 초기화합니다."""
     print("--- RAG 파이프라인 초기화 시작 ---")
     
-    if not os.path.exists(PDF_PATH):
-        raise FileNotFoundError(f"PDF 파일을 찾을 수 없습니다: {PDF_PATH}")
+    if not os.path.exists(pdf_path):
+        raise FileNotFoundError(f"PDF 파일을 찾을 수 없습니다: {pdf_path}")
     
     # 1. 문서 로드
-    loader = PyPDFLoader(PDF_PATH)
+    loader = PyPDFLoader(pdf_path)
     docs = loader.load()
     print("✅ [1/5] 문서 로드 완료")
     
@@ -51,8 +49,8 @@ QUESTION: {question}
         model="gpt-3.5-turbo",
         temperature=0,
         openai_api_key=openai_api_key,
-        max_tokens=500,  # 비용 최적화
-        timeout=30       # 타임아웃 설정
+        max_tokens=500,
+        timeout=30
     )
     
     rag_chain = (
@@ -67,3 +65,4 @@ QUESTION: {question}
 
 def get_answer(chain, question):
     return chain.invoke(question)
+
