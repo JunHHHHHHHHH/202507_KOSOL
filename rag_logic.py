@@ -5,22 +5,18 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import OllamaEmbeddings
-from langchain_community.chat_models import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema.output_parser import StrOutputParser
 
 # --- 상수 정의 ---
-# 현재 스크립트와 같은 디렉토리에 PDF 파일이 있도록 경로 설정
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PDF_PATH = os.path.join(BASE_DIR, "주간농사정보 제28호.pdf") #PDF_PATH = os.path.join(BASE_DIR, "주간농사정보 제28호.pdf")
-
+PDF_PATH = os.path.join(BASE_DIR, "주간농사정보 제28호.pdf")
 EMBEDDING_MODEL_NAME = "nomic-embed-text"
-LLM_MODEL_NAME = "gemma3"  # llama3로 변경 가능
-
 
 # RAG 체인을 초기화하고 반환하는 함수
-def initialize_rag_chain():
+def initialize_rag_chain(openai_api_key):
     """
     문서 로드, 분할, 임베딩, 벡터DB 생성, RAG 체인 생성을 수행하고
     생성된 RAG 체인을 반환합니다.
@@ -62,7 +58,11 @@ QUESTION: {question}
 """
     
     prompt = ChatPromptTemplate.from_template(template)
-    llm = ChatOllama(model=LLM_MODEL_NAME, temperature=0)
+    llm = ChatOpenAI(
+        model="gpt-3.5-turbo",
+        temperature=0,
+        openai_api_key=openai_api_key
+    )
     
     rag_chain = (
         {"context": retriever, "question": RunnablePassthrough()}
